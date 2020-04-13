@@ -1,0 +1,106 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appServicePlanName": {
+            "type": "string",
+            "metadata":{
+                "description": "App service plan name."
+            }
+        },
+        "webAppName": {
+            "type": "string",
+            "metadata":{
+                "description": "Web app name. It has to be unique."
+            }
+        },
+        "linuxFxVersion": {
+            "type": "string",
+            "defaultValue": "NODE|10-lts",
+            "metadata":{
+                "description": "List of runtimes: az webapp list-runtimes --linux"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-02-01",
+            "name": "[parameters('appServicePlanName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "family": "S",
+                "capacity": 1
+            },
+            "kind": "linux",
+            "properties": {
+                "perSiteScaling": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "name": "[parameters('webAppName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "app,linux",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+            ],
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                "reserved": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('webAppName'), '/web')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('webAppName'))]"
+            ],
+            "properties": {
+                "linuxFxVersion": "[parameters('linuxFxVersion')]"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('webAppName'), '/test')]",
+            "location": "[resourceGroup().location]",
+            "kind": "app,linux",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('webAppName'))]"
+            ],
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                "reserved": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/config",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('webAppName'), '/', 'test/web')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('webAppName'), 'test')]"
+            ],
+            "properties": {
+                "linuxFxVersion": "[parameters('linuxFxVersion')]"
+            }
+        }
+    ]
+}

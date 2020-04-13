@@ -1,0 +1,4 @@
+{
+    "itemDisplayName": "Create Linux App Service in Azure",
+    "description": "This template allows you to deploy Linux App service with a slot"
+}
